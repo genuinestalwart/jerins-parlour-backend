@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -39,6 +39,9 @@ const run = async () => {
 	try {
 		// await client.connect();
 		const reviewsColl = client.db("JerinsParlourDB").collection("reviews");
+		const servicesColl = client
+			.db("JerinsParlourDB")
+			.collection("services");
 		const usersColl = client.db("JerinsParlourDB").collection("users");
 
 		//
@@ -91,7 +94,7 @@ const run = async () => {
 
 		//
 
-		app.post("/users", verifyToken, async (req: ReqVerify, res) => {
+		app.post("/users", verifyToken, async (req, res) => {
 			const { uid } = req.body;
 			const update = { $set: req.body };
 			const upsert = { upsert: true };
@@ -106,11 +109,46 @@ const run = async () => {
 			res.send(result);
 		});
 
-		app.get("/reviews/:uid", verifyToken, async (req: ReqVerify, res) => {
+		app.get("/reviews/:uid", verifyToken, async (req, res) => {
 			const { uid } = req.params;
 			const result = await reviewsColl.findOne({ uid });
 			res.send(result);
 		});
+
+		//
+
+		app.get("/services", verifyToken, async (req, res) => {
+			const result = await servicesColl.find().toArray();
+			res.send(result);
+		});
+
+		app.post("/services", verifyToken, verifyAdmin, async (req, res) => {
+			const result = await servicesColl.insertOne(req.body);
+			res.send(result);
+		});
+
+		app.patch(
+			"/services/:id",
+			verifyToken,
+			verifyAdmin,
+			async (req, res) => {
+				const _id = new ObjectId(req.params.id);
+				const update = { $set: req.body };
+				const result = await servicesColl.updateOne({ _id }, update);
+				res.send(result);
+			}
+		);
+
+		app.delete(
+			"/services/:id",
+			verifyToken,
+			verifyAdmin,
+			async (req, res) => {
+				const _id = new ObjectId(req.params.id);
+				const result = await servicesColl.deleteOne({ _id });
+				res.send(result);
+			}
+		);
 	} finally {
 		// await client.close();
 	}
