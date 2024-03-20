@@ -115,6 +115,18 @@ const run = async () => {
 			res.send(result);
 		});
 
+		app.post("/reviews", verifyToken, async (req, res) => {
+			const result = await reviewsColl.insertOne(req.body);
+			res.send(result);
+		});
+
+		app.patch("/reviews/:uid", verifyToken, async (req, res) => {
+			const { uid } = req.params;
+			const update = { $set: req.body };
+			const result = await reviewsColl.updateOne({ uid }, update);
+			res.send(result);
+		});
+
 		//
 
 		app.get("/services", verifyToken, async (req, res) => {
